@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="../lib/complex_array.js"></script>
+  <script src="../lib/fft.js"></script>
+  <link rel="stylesheet" href="example.css">
+  <title></title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.17/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.17/addons/p5.sound.js"></script>
+
+  <script>
+  var mic;
+  var spn;
+  var silentNode;
+  var logged = 0;
+
+  var inputBuffer;
+  var buff;
+
+	var cArr;
+  var fft;
+
+  var bufferSize = 2048;
+  var blurAmt = 1;
+
+  function setup() {
+  	createCanvas(windowWidth/2, windowHeight-windowHeight/2);
+
+  	var ac = getAudioContext();
+  	mic = new p5.AudioIn();
+  	mic.start();
+  	spn = ac.createScriptProcessor(bufferSize, 1, 1);
+
+  	silentNode = ac.createGain();
+  	silentNode.gain.value = 0;
+  	silentNode.connect(ac.destination);
+
+  	mic.connect(spn);
+  	spn.connect(silentNode);
+  	spn.connect(ac.destination);
+
+  	cArr = new complex_array.ComplexArray(bufferSize);
+
+  	spn.onaudioprocess = function(e) {
+  		inputBuffer = e.inputBuffer;
+  		buff = e.inputBuffer.getChannelData(0);
+
+  		// TO DO: apply windowing
+  		var windowedSignal = WinFunc.Process(buff, "Blackman");
+
+  		cArr.map(function(value, i, n) {
+  			value.real = buff[i];
+  		});
+
+  		fft = cArr.FFT();
+
+  		// 
+
+  		// inverse fft
+  		var invFFT = cArr.InvFFT();
+  		var outputBuffer = e.outputBuffer.getChannelData(0);
+
+  		for (var i = 0; i < e.outputBuffer.numberOfChannels; i++) {
+				var outputBuffer = e.outputBuffer.getChannelData(i);
+	    	var wBuf = WinFunc.Process(invFFT.real, "Gauss", blurAmt);
+				// var wBuf = invFFT.real;
+
+		    for (var sample = 0; sample < outputBuffer.length; sample++) {
+		    	outputBuffer[sample] = wBuf[sample];
+		    }
+		  }
+
+  	};
+  }
+
+
+  function draw() {
+  	background(255);
+
+  	for (var i = 0; i < fft.length/2; i++) {
+  		var binAmp = Math.sqrt( Math.pow(fft.real[i],2) + Math.pow(fft.imag[i],2) );
+  		var x = map(i, 0, fft.length/2, 0, width);
+  		var y = map(binAmp, 0, 1, height, 0);
+  		line(x, height, x, y);
+  	}
+
+  	// set blur amt based on mousex
+  	blurAmt = constrain( map(mouseX, 0, width, 0, 1), 0, 1);
+
+  }
+
+  // via dsp.js
+  var WinFunc = {
+  	"Hamming" : function(length, index) {
+			return 0.54 - 0.46 * Math.cos( (Math.PI*2) * index / (length - 1));
+		},
+		"Gauss": function(length, index, alpha) {
+		 return Math.pow(Math.E, -0.5 * Math.pow((index - (length - 1) / 2) / (alpha * (length - 1) / 2), 2));
+		},
+		"Blackman": function(length, index, alpha) {
+		  var a0 = (1 - alpha) / 2;
+		  var a1 = 0.5;
+		  var a2 = alpha / 2;
+		  return a0 - a1 * Math.cos(Math.PI*2 * index / (length - 1)) + a2 * Math.cos(4 * Math.PI * index / (length - 1));
+		},
+		"Cosine": function(length, index) {
+		  return Math.cos(Math.PI * index / (length - 1) - Math.PI / 2);
+		},
+		"Process": function(buffer, _type, _alpha) {
+			var len = buffer.length;
+			var type = _type || "Hamming";
+			var alpha = _alpha || 1.0;
+			for (var i = 0; i < len; i++) {
+				buffer[i] *= this[type](len, i, alpha);
+			}
+			return buffer;
+		} 
+  }
+
+  </script>
+</head>
+
+<body>
+</body>
