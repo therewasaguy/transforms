@@ -35,28 +35,27 @@ function setup() {
 	pxls = ctx.getImageData(0, 0, width, height).data;
 
 	for (var i = 0; i < pxls.length /4; i++) {
-		reds[i] = pxls[i*4];
-		greens[i] = pxls[i*4 + 1];
-		blue[i] = pxls[i*4 + 2];
-		alphas[i] = pxls[i*4 + 3];
+		reds[i] = Math.log(pxls[i*4]);
+		greens[i] = Math.log(pxls[i*4 + 1]);
+		blues[i] = Math.log(pxls[i*4 + 2]);
+		alphas[i] = Math.log(pxls[i*4 + 3]);
 	}
 
-	// var newReds = new Uint8ClampedArray( doFFT(reds).real );
-	// var newGreens = new Uint8ClampedArray( doFFT(greens).real );
-	// var newBlues = new Uint8ClampedArray( doFFT(blues).real );
+	newReds = makePower(reds);
+	newGreens = makePower(greens);
+	newBlues = makePower(blues);
 
-	miniFFT(reds, zeroes);
-	zeroes = new Uint8ClampedArray(w*h);
+	// miniFFT(reds, zeroes);
+	// zeroes = new Uint8ClampedArray(w*h);
 
-	miniFFT(greens, zeroes);
-	zeroes = new Uint8ClampedArray(w*h);
+	// miniFFT(greens, zeroes);
+	// zeroes = new Uint8ClampedArray(w*h);
 
-	miniFFT(blues, zeroes);
+	// miniFFT(blues, zeroes);
 
 	// miniFFT(alphas, zeroes);
 
-
-	fillImageRGB(reds, greens, blues, alphas);
+	fillImageRGB(newReds, newGreens, newBlues);
 
 	// var newImgData = new Uint8ClampedArray ( fft.FFTImageDataRGBA(pxls, w, h).real );
 	// console.log(newImgData);
@@ -74,6 +73,19 @@ function setup() {
 
 	// fillImageRGB(reds, greens, blues);
 
+}
+
+function makePower(arr) {
+	var theFFT = doFFT(arr);
+	var newArr = new Uint8ClampedArray( w*h );
+
+	for (var i = 0; i < theFFT.length; i++) {
+		// newArr[i] = theFFT.real[i];
+		newArr[i] = Math.sqrt(Math.pow(theFFT.real[i],2)+Math.pow(theFFT.imag[i],2))
+	}
+
+	// console.log(newArr)
+	return newArr;
 }
 
 function draw() {
@@ -100,7 +112,7 @@ function doFFT(values) {
 }
 
 
-/////// fill image
+/////// fill image - alpha is 255 if not provided
 function fillImageRGB(r, g, b, a) {
 	var len = r.length*4;
 	var imageDataArray = new Uint8ClampedArray(len);
@@ -109,7 +121,7 @@ function fillImageRGB(r, g, b, a) {
 		imageDataArray[i*4] = r[i];
 		imageDataArray[i*4 + 1] = g[i];
 		imageDataArray[i*4 + 2] = b[i];
-		imageDataArray[i*4 + 3] = a[i];
+		imageDataArray[i*4 + 3] = a ? a[i] : 255;
 	}
 
 	fillImageFromData(imageDataArray);
