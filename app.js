@@ -17,16 +17,15 @@ function preload() {
 function setup() {
 	cnv = createCanvas(w, h);
 	ctx = cnv.elt.getContext('2d');
-	// background(0);
+	background(0);
 	pixelDensity(1);
-	// noStroke();
+	noStroke();
 	frameRate(1);
 
 	reds = new Uint8ClampedArray(w*h);
 	greens = new Uint8ClampedArray(w*h);
 	blues = new Uint8ClampedArray(w*h);
 	alphas = new Uint8ClampedArray(w*h);
-
 	zeroes = new Uint8ClampedArray(w*h);
 
 	// drawGradient();
@@ -35,80 +34,119 @@ function setup() {
 	pxls = ctx.getImageData(0, 0, width, height).data;
 
 	for (var i = 0; i < pxls.length /4; i++) {
-		reds[i] = Math.log(pxls[i*4]);
-		greens[i] = Math.log(pxls[i*4 + 1]);
-		blues[i] = Math.log(pxls[i*4 + 2]);
-		alphas[i] = Math.log(pxls[i*4 + 3]);
+		reds[i] = pxls[i*4];
+		greens[i] = pxls[i*4 + 1];
+		blues[i] = pxls[i*4 + 2];
+		alphas[i] = pxls[i*4 + 3];
 	}
 
-	newReds = makePower(reds);
-	newGreens = makePower(greens);
-	newBlues = makePower(blues);
+	redFFT = doFFT(reds);
+	greenFFT = doFFT(greens);
+	blueFFT = doFFT(blues);
 
-	// miniFFT(reds, zeroes);
-	// zeroes = new Uint8ClampedArray(w*h);
+	console.log(redFFT);
+	// redFFT = scaleFFT(redFFT, 20);
+	// greenFFT = scaleFFT(greenFFT, 20);
+	// blueFFT = scaleFFT(blueFFT, 20);
 
-	// miniFFT(greens, zeroes);
-	// zeroes = new Uint8ClampedArray(w*h);
+	var redInv = inverseFFT(redFFT);
+	var greenInv = inverseFFT(greenFFT);
+	var blueInv = inverseFFT(blueFFT);
 
-	// miniFFT(blues, zeroes);
-
-	// miniFFT(alphas, zeroes);
-
-	fillImageRGB(newReds, newGreens, newBlues);
-
-	// var newImgData = new Uint8ClampedArray ( fft.FFTImageDataRGBA(pxls, w, h).real );
-	// console.log(newImgData);
-	// fillImageFromData(newImgData);
-
-
-	// zeroes = new Uint8ClampedArray(w*h);
-	// miniFFT(reds, zeroes);
-
-	// zeroes = new Uint8ClampedArray(w*h);
-	// miniFFT(greens, zeroes);
-
-	// zeroes = new Uint8ClampedArray(w*h);
-	// miniFFT(blues, zeroes);
-
-	// fillImageRGB(reds, greens, blues);
-
+	fillImageRGB(redInv.real, greenInv.real, blueInv.real, alphas);
 }
 
-function makePower(arr) {
-	var theFFT = doFFT(arr);
-	var newArr = new Uint8ClampedArray( w*h );
+function oscCol(complex, freq) {
 
-	for (var i = 0; i < theFFT.length; i++) {
-		// newArr[i] = theFFT.real[i];
-		newArr[i] = Math.sqrt(Math.pow(theFFT.real[i],2)+Math.pow(theFFT.imag[i],2))
+	// REAL
+	// var theMax = complex.real.max();
+	// var theMin = complex.real.min();
+	// var actualMax = Math.max(theMax, Math.abs(theMin));
+
+	// var realBuffer = new Float32Array(complex.real.length);
+	// for (var i = 0; i < complex.real.length; i++) {
+	// 	realBuffer[i] = complex.real[i] / actualMax;
+	// }
+
+	// // IMAG
+	// theMax = complex.real.max();
+	// theMin = complex.real.min();
+	// actualMax = Math.max(theMax, Math.abs(theMin));
+
+	// var imagBuffer = new Float32Array(complex.real.length);
+	// for (var i = 0; i < complex.real.length; i++) {
+	// 	imagBuffer[i] = complex.imag[i] / actualMax;
+	// }
+
+	// make oscillator slicing one row
+	for (var i = 0; i < h; i++) {
+		complex.real[i] = 0.1;
+		complex.imag[i] = 0.1;
+		makeOscillator(complex.real.slice(i, i + w), complex.imag.slice(i, i +w), i, freq);
 	}
-
-	// console.log(newArr)
-	return newArr;
 }
+
+function makeOscillator(realBuffer, imagBuffer, t, freq) {
+	var osc = audioContext.createOscillator();
+	var gain = audioContext.createGain();
+	var now = audioContext.currentTime;
+
+	var wave = audioContext.createPeriodicWave(realBuffer, imagBuffer, {disableNormalization: false});
+	osc.setPeriodicWave(wave);
+
+	osc.connect(gain);
+	gain.connect(audioContext.destination);
+	gain.gain.value = 0;
+	osc.frequency.value = freq;
+
+	osc.start(audioContext.currentTime);
+	gain.gain.exponentialRampToValueAtTime(0.5, now + t/100);
+	gain.gain.exponentialRampToValueAtTime(0.00001, now + t/100 + 2);
+}
+
+
+
+// function playAColumn(num) {
+// 	var allPixels = ctx.getImageData(0, 0, width, height).data;
+// 	var columnData = new Array(h);
+// 	for (var i = num; i < w; i += w) {
+// 		columnData.push(allPixels[i]);
+// 	}
+// 	playColumn(columnData);
+
+// }
+
 
 function draw() {
-	// fillImageRGB(reds, greens, blues);
 
-	// createAudioBuffer(pxls);
-	// createOfflineBuffer(pxls);
 }
 
 
 //////// do the FFT with js.fft library
 function doFFT(values) {
-
 	var data = new complex_array.ComplexArray(values.length);
-
-	// Use the in-place mapper to populate the data.
-	data.map(function(value, i, n) {
-	  value.real = (i > n/3 && i < 2*n/3) ? 1 : 0
-	});
-
+	data.real = new Float32Array(values);
 	var frequencies = data.FFT();
 
 	return frequencies;
+}
+
+function inverseFFT(complex) {
+	var data = new complex_array.ComplexArray(complex.real.length);
+	data.real = new Float32Array(complex.real);
+	data.imag = new Float32Array(complex.imag);
+	var inverse = data.InvFFT();
+	return inverse;
+}
+
+function scaleFFT(complex, scalar) {
+	var scalar = scalar || 20;
+	// scale real
+	for (var i = 0; i < complex.length; i++) {
+		complex.real[i] = scalar*Math.log(Math.abs(complex.real[i]));
+		complex.imag[i] = scalar*Math.log(Math.abs(complex.imag[i]));
+	}
+	return complex;
 }
 
 
@@ -127,6 +165,13 @@ function fillImageRGB(r, g, b, a) {
 	fillImageFromData(imageDataArray);
 
 }
+
+
+
+
+
+
+
 
 function fillImageFromData(newData) {
 	var imageData = new ImageData(newData, width, height);
