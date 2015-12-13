@@ -2,6 +2,7 @@ var reds;
 var greens;
 var blues;
 var zeroes;
+var started = false;
 
 // pixels uint8
 var pxls;
@@ -20,8 +21,7 @@ function setup() {
 	background(0);
 	pixelDensity(1);
 	noStroke();
-	frameRate(1);
-
+	frameRate(5);
 	reds = new Uint8ClampedArray(w*h);
 	greens = new Uint8ClampedArray(w*h);
 	blues = new Uint8ClampedArray(w*h);
@@ -30,8 +30,9 @@ function setup() {
 
 	// drawGradient();
 	image(img, 0, 0);
-
-	pxls = ctx.getImageData(0, 0, width, height).data;
+	img.loadPixels();
+	// pxls = ctx.getImageData(0, 0, width, height).data;
+	pxls = img.pixels;
 
 	for (var i = 0; i < pxls.length /4; i++) {
 		reds[i] = pxls[i*4];
@@ -44,7 +45,6 @@ function setup() {
 	greenFFT = doFFT(greens);
 	blueFFT = doFFT(blues);
 
-	console.log(redFFT);
 	// redFFT = scaleFFT(redFFT, 20);
 	// greenFFT = scaleFFT(greenFFT, 20);
 	// blueFFT = scaleFFT(blueFFT, 20);
@@ -86,6 +86,7 @@ function oscCol(complex, freq) {
 	}
 }
 
+
 function makeOscillator(realBuffer, imagBuffer, t, freq) {
 	var osc = audioContext.createOscillator();
 	var gain = audioContext.createGain();
@@ -97,30 +98,58 @@ function makeOscillator(realBuffer, imagBuffer, t, freq) {
 	osc.connect(gain);
 	gain.connect(audioContext.destination);
 	gain.gain.value = 0;
-	osc.frequency.value = freq;
+	osc.frequency.value = freq + t/100;
 
 	osc.start(audioContext.currentTime);
-	gain.gain.exponentialRampToValueAtTime(0.5, now + t/100);
-	gain.gain.exponentialRampToValueAtTime(0.00001, now + t/100 + 2);
+	gain.gain.exponentialRampToValueAtTime(0.5, now + t/10);
+	gain.gain.linearRampToValueAtTime(0, now + 0.2 + t/10);
+	gain.connect(aNode);
 }
 
-
-
-// function playAColumn(num) {
-// 	var allPixels = ctx.getImageData(0, 0, width, height).data;
-// 	var columnData = new Array(h);
-// 	for (var i = num; i < w; i += w) {
-// 		columnData.push(allPixels[i]);
-// 	}
-// 	playColumn(columnData);
-
-// }
 
 
 function draw() {
+	// background(0);
+	// aNode.getFloatTimeDomainData(audioWaveform);
 
+	// complexAudio = doFFT(audioWaveform);
+	// inverseAudio = inverseFFT(complexAudio);
+
+	// aNode.getFloatFrequencyData(freqDomain);
+	if (started) {
+		aNode.getByteFrequencyData(freqDomain);
+		var len = freqDomain.length;
+
+		// var rectSize = len/w;
+		// var rectCount = w*h/len;
+
+		// var c = 0;
+		// for (var i = 0; i < rectCount; i++) {
+		// 	for (var j = 0; j < rectCount; j++) {
+		// 		// fill( Number(freqDomain[c] ), Number( freqDomain[c+1] ), Number( freqDomain[c+2] ), 50 );
+		// 		fill(random(255), 0, 0);
+		// 		rect(i*rectSize, j*rectSize, rectSize, rectSize);
+		// 		// c = (c+4) % len;
+		// 	}
+		// }
+
+		var rectWidth = w/len;
+
+		var rectSize = h;
+		for (var i = 0; i < len/4; i+=4) {
+			fill(freqDomain[i], freqDomain[i+1], freqDomain[i+2]);
+			rect(i*rectWidth*4, 0, rectSize, rectSize);
+		}
+	}
 }
 
+function keyPressed() {
+	if (key === ' ') {
+		// oscCol(greenFFT, 100);
+		oscCol(blueFFT, 100);
+		started = true;
+	}
+}
 
 //////// do the FFT with js.fft library
 function doFFT(values) {

@@ -3,6 +3,12 @@
 
 var audioContext = new AudioContext();
 
+var aNode = audioContext.createAnalyser();
+aNode.fftSize = 512;
+var bufferLength = aNode.frequencyBinCount;
+var audioWaveform = new Float32Array(bufferLength);
+var freqDomain = new Uint8Array(bufferLength);
+
 function playColumn(imageData) {
 	var audioBuffer = createAudioBuffer(imageData);
 	var bufferSource = audioContext.createBufferSource();
@@ -33,4 +39,9 @@ function fillAudio(audioBuffer, imageData, frameCount, channels) {
 			// nowBuffering[i] = map(imageData[i], 0, 255, -1, 1);
 		}
 	}
+}
+
+function makeOsc(wave){
+	var oscillator = audioContext.createOscillator();
+	oscillator.setPeriodicWave(wave);
 }
