@@ -67,7 +67,7 @@ function startCam() {
 		navigator.getUserMedia({video: true}, function(stream) {
 			video.src = window.URL.createObjectURL(stream) || stream;
 			video.play();
-		}, function(error) {alert("Failure " + error.code);});
+		}, function(error) {alert("Your browser doesnt allow access to webcam. Try Chrome ");});
 	}
 };
 
