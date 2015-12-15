@@ -1,7 +1,7 @@
 var baseNote = 36;
 // var noteScale = [0, 2, 4, 5, 7, 9, 10, 12];
-var noteScale = [0, 2, 4, 7, 9];
-var octaveRange = 3;
+var noteScale = [0, 2, 4, 7, 9, 12];
+var octaveRange = 2;
 
 // initialize audio components
 var osc = new Tone.OmniOscillator('D2', 'sawtooth24');
