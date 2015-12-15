@@ -113,7 +113,7 @@ function draw() {
 	setTimeout(draw,50);
 }
 
-//http://jsfiddle.net/jsonsigal/wL923om1/
+// via https://jsfiddle.net/xLF38/
 function getAverageRGB(pxls) {
 	var blockSize = 5, // only visit every 5 pixels
 		rgb = {r: 0, g: 0, b: 0},
