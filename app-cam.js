@@ -72,25 +72,33 @@ function startCam() {
 };
 
 function draw() {
-
-	//mirror
-	ctx1.drawImage(video, 0, 0, cnv1.width, cnv1.height);
-
 	var rowWidth = Math.round(w/numRows);
 	var colHeight = Math.round(h/numCols);
 
+	// draw video to graphics context 1 (which is hidden)
+	ctx1.drawImage(video, 0, 0, cnv1.width, cnv1.height);
+
+	// keep track of which box we're in
 	var indexCounter = 0;
+
 	// split into rows and colums
 	for (var col = 0; col < (h - colHeight); col+= colHeight) {
 		for (var row = 0; row < (w - rowWidth); row+= rowWidth) {
+
 			ctx2.globalAlpha=0.9;
+
+			// get a rectangle of image data (pixels)
 			var imgData = ctx1.getImageData(row, col, rowWidth, colHeight);
 
+			// find average rgb value in this rectangle
 			var avgRGB = getAverageRGB(imgData.data);
+
+			// draw a rectangle on graphics context 2 (visible)
 			var c = rgbToHex(avgRGB);
 			ctx2.fillStyle=c;
 			ctx2.fillRect(row, col, rowWidth, colHeight);
 
+			// show which item we're on. curMatrixIndex is set by tone.loop in app-audio.js
 			if (curMatrixIndex === indexCounter) {
 				ctx2.globalAlpha=0.07;
 				ctx2.fillStyle='#fffff0';
@@ -101,6 +109,7 @@ function draw() {
 			indexCounter++;
 		}
 	}
+	// call this function again in 50 ms
 	setTimeout(draw,50);
 }
 
