@@ -56,6 +56,32 @@ function setup() {
 	fillImageRGB(redInv.real, greenInv.real, blueInv.real, alphas);
 }
 
+//http://jsfiddle.net/jsonsigal/wL923om1/
+function getAverageRGB(pxls) {
+	var blockSize = 5, // only visit every 5 pixels
+		rgb = {r: 0, g: 0, b: 0},
+		i = -4,
+		length,
+		count = 0;
+
+	var length = pxls.length;
+
+	while ( (i += blockSize * 4) < length ) {
+		++count;
+		rgb.r += pxls[i];
+		rgb.g += pxls[i+1];
+		rgb.b += pxls[i+2];
+	}
+
+	// ~~ used to floor values
+	rgb.r = ~~(rgb.r/count);
+	rgb.g = ~~(rgb.g/count);
+	rgb.b = ~~(rgb.b/count);
+	
+	return rgb;
+}
+
+
 function oscCol(complex, freq) {
 
 	// REAL
@@ -101,7 +127,7 @@ function makeOscillator(realBuffer, imagBuffer, t, freq) {
 	osc.frequency.value = freq + t/100;
 
 	osc.start(audioContext.currentTime);
-	gain.gain.exponentialRampToValueAtTime(0.5, now + t/10);
+	gain.gain.exponentialRampToValueAtTime(0.2, now + t/10);
 	gain.gain.linearRampToValueAtTime(0, now + 0.2 + t/10);
 	gain.connect(aNode);
 }
@@ -146,8 +172,10 @@ function draw() {
 function keyPressed() {
 	if (key === ' ') {
 		// oscCol(greenFFT, 100);
-		oscCol(blueFFT, 100);
+		oscCol(blueFFT, 98);
 		started = true;
+	} else if (key === 'R') {
+			oscCol(redFFT, 123);
 	}
 }
 

@@ -1,23 +1,33 @@
 <!DOCTYPE html>
 <head>
+	<script src="http://cdn.tonejs.org/latest/Tone.js"></script>
 
-	<script src="libs/p5.js"></script>
-	<script src="libs/rosettaFFT.js"></script>
-
-	<script src="libs/jsfft/lib/complex_array.js"></script>
-	<script src="libs/jsfft/lib/fft.js"></script>
-	<script src="libs/jsfft/lib/fft_image.js"></script>
-
-	<script src="//cdn.jsdelivr.net/pixastic/0.1.3/pixastic.all.js"></script>
-
-	<script src="helpers.js"></script>
-	<script src="audio.js"></script>
-
-	<script src="myFFT.js"></script>
-	<script src="app.js"></script>
+	<script src="app-cam.js"></script>
+	<script src="app-audio.js"></script>
 </head>
 
+<style>
+
+	body {
+		background:#222;
+	}
+	#container {
+		width:100%;
+		height:100%;
+	}
+
+	canvas {
+		position: absolute;
+		top: 0px;
+		left: 0px;
+		right:0px;
+		bottom:0px;
+	}
+
+</style>
+
 <body>
-	<div id="canvas-container"></div>
-	<img src="img/coolcity512.jpg">
+	<div id="container">
+	</div>
+
 </body>
